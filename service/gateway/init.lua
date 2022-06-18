@@ -5,7 +5,7 @@ local runconfig = require("runconfig")
 
 local conns = {}  --[fd] = conn
 local players = {}  --[playerId] = gatePlayer
-
+local loginAddrs = {}
 local function conn()
     local m = {
         fd = nil,
@@ -52,8 +52,10 @@ local process_msg = function(fd,msgstr)
         local node = skynet.getenv("node")
         local nodecfg = runconfig[node]
         local loginId = math.random(1,#nodecfg.login)
-        local login = "login"..loginId
-        skynet.send(login,"lua","client",fd,cmd,msg)
+        ---todo
+        local addr = loginAddrs[1]
+        skynet.error("gateway target : "..skynet.address(addr))
+        skynet.send(addr,"lua","client",fd,cmd,msg)
     else
         local gplayer = players[playerId]
         local agent = gplayer.agent
@@ -70,6 +72,22 @@ local process_buff = function(fd,readBuff)
         else
             return readBuff
         end
+    end
+end
+
+local disconnect = function(fd)
+    local c = conns[fd]
+    if not c then
+        return
+    end
+
+    local playerId = c.playerId
+    if not playerId then
+        return
+    else
+        players[playerId] = nil
+        local reason = "断线"
+        skynet.call("agentmgr","lua","reqkick",playerId,reason)
     end
 end
 
@@ -105,8 +123,65 @@ function s.init()
     local port = nodecfg.gateway[s.id].port
 
     local listenfd = socket.listen("0.0.0.0",port)
-    skynet.error("listen socket :","0.0.0.0",port)
+    skynet.error("listen socket :","0.0.0.0",port,s.id,s.name)
     socket.start(listenfd,connect)
+end
+
+s.resp.send_by_fd = function(source,fd,msg)
+    if not conns[fd] then
+        return
+    end
+
+    local buff = str_pack(msg[1],msg)
+    skynet.error("send "..fd.." ["..msg[1].."] {"..table.concat(msg,",").."}")
+    socket.write(fd,buff)
+end
+
+s.resp.send=function(source,playerId,msg)
+    local gplayer = players[playerId]
+    if gplayer==nil then
+        return
+    end
+    local c = gplayer.conn
+    if c==nil then
+        return
+    end
+    s.resp.send_by_fd(nil,c.fd,msg)
+end
+
+s.resp.sure_agent=function(source,fd,playerId,agent)
+    local cn = conns[fd]
+    if not cn then
+        skynet.call("agentmgr","lua","reqkick",playerId,"未完成登录即下线")
+        return false
+    end
+    cn.playerId = playerId
+    local gplayer = gatePlayer()
+    gplayer.playerId = playerId
+    gplayer.agent = agent
+    gplayer.conn = cn
+    players[playerId] = gplayer
+    return true
+end
+
+s.resp.kick=function(source,playerId)
+    local gplayer = players[playerId]
+    if not gplayer then
+        return
+    end
+    local c = gplayer.conn
+    players[playerId] = nil
+    if not c then
+        return
+    end
+    conns[c.fd] = nil
+    disconnect(c.fd)
+    socket.close(c.fd)
+end
+
+s.resp.saveLogin=function(source,addr,id)
+    skynet.error("[save] : "..skynet.address(addr).." : "..id)
+    loginAddrs[id] = addr
 end
 
 s.start(...)
