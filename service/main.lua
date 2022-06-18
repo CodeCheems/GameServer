@@ -9,8 +9,6 @@ skynet.start(function()
     local login = skynet.newservice("login","login",1)
     skynet.error("gateway1 addr: "..skynet.address(gateway))
     skynet.error("login1 addr: "..skynet.address(login))
-
-    skynet.send(gateway,"lua","saveLogin",login,1)
     --skynet.newservice("debug_console",8000)
     skynet.exit()
 end)

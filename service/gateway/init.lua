@@ -5,7 +5,7 @@ local runconfig = require("runconfig")
 
 local conns = {}  --[fd] = conn
 local players = {}  --[playerId] = gatePlayer
-local loginAddrs = {}
+
 local function conn()
     local m = {
         fd = nil,
@@ -53,7 +53,7 @@ local process_msg = function(fd,msgstr)
         local nodecfg = runconfig[node]
         local loginId = math.random(1,#nodecfg.login)
         ---todo
-        local addr = loginAddrs[1]
+        local addr = skynet.localname(".login1")
         skynet.error("gateway target : "..skynet.address(addr))
         skynet.send(addr,"lua","client",fd,cmd,msg)
     else
@@ -177,11 +177,6 @@ s.resp.kick=function(source,playerId)
     conns[c.fd] = nil
     disconnect(c.fd)
     socket.close(c.fd)
-end
-
-s.resp.saveLogin=function(source,addr,id)
-    skynet.error("[save] : "..skynet.address(addr).." : "..id)
-    loginAddrs[id] = addr
 end
 
 s.start(...)
