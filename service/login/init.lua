@@ -12,8 +12,24 @@ s.resp.client = function(source,fd,cmd,msg)
 end
 
 s.client.login = function(fd,msg,source)
-    skynet.error("login recv ",table.unpack(msg))
-    return{"login",-1,"测试"}
+    skynet.error(s.name..s.id.." recv ",table.unpack(msg))
+    local playerId = tonumber(msg[2])
+    local pw = tonumber(msg[3])
+    local gate = source
+    local node = skynet.getenv("node")
+    if pw~=123 then
+        return {"login",1,"密码错误"}
+    end
+    local isok,agent = skynet.call("agentmgr","lua","reqlogin",playerId,node,gate)
+    if not isok then
+        return {"login",2,"请求agentmgr失败"}
+    end
+    isok = skynet.call(gate,"lua","sure_agent",fd,playerId,agent)
+    if not isok then
+        return {"login",3,"gate注册失败"}
+    end
+    skynet.error{"login succ "..playerId}
+    return {"login",0,"登录成功"}
 end
 
 s.start(...)
