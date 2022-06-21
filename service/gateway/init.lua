@@ -2,7 +2,7 @@ local skynet = require("skynet")
 local s = require("service")
 local socket = require("skynet.socket")
 local runconfig = require("runconfig")
-
+local harbor = require("skynet.harbor")
 local conns = {}  --[fd] = conn
 local players = {}  --[playerId] = gatePlayer
 
@@ -53,7 +53,7 @@ local process_msg = function(fd,msgstr)
         local nodecfg = runconfig[node]
         local loginId = math.random(1,#nodecfg.login)
         ---todo
-        local addr = skynet.localname(".login1")
+        local addr = skynet.localname(".login"..loginId)
         skynet.error("gateway target : "..skynet.address(addr))
         skynet.send(addr,"lua","client",fd,cmd,msg)
     else
@@ -87,7 +87,8 @@ local disconnect = function(fd)
     else
         players[playerId] = nil
         local reason = "断线"
-        skynet.call("agentmgr","lua","reqkick",playerId,reason)
+        local amgr = harbor.queryname("agentmgr")
+        skynet.call(amgr,"lua","reqkick",playerId,reason)
     end
 end
 
@@ -152,7 +153,8 @@ end
 s.resp.sure_agent=function(source,fd,playerId,agent)
     local cn = conns[fd]
     if not cn then
-        skynet.call("agentmgr","lua","reqkick",playerId,"未完成登录即下线")
+        local amgr = harbor.queryname("agentmgr")
+        skynet.call(amgr,"lua","reqkick",playerId,"未完成登录即下线")
         return false
     end
     cn.playerId = playerId

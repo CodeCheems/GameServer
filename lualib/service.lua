@@ -54,7 +54,7 @@ function init()
     if M.init then
         M.init()
     end
-    skynet.register("."..M.name..M.id)
+    --skynet.register("."..M.name..M.id)
 end
 
 function M.start(name,id,...)

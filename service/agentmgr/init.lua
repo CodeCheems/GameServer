@@ -46,7 +46,8 @@ s.resp.reqlogin = function(source,playerId,node,gate)
     player.agent = nil
     player.status = STATUS.LOGIN
     players[playerId] = player
-    local agent = s.call(node,"nodemgr","newservice","agent","agent",playerId)
+    local nmgr = skynet.localname(".nodemgr")
+    local agent = s.call(node,nmgr,"newservice","agent","agent",playerId)
     player.agent = agent
     player.status = STATUS.GAME
     return true,agent
@@ -70,3 +71,5 @@ s.resp.reqkick = function(source,playerId,reason)
     players[playerId] = nil
     return true
 end
+
+s.start(...)
