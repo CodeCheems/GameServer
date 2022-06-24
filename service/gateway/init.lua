@@ -86,7 +86,7 @@ local disconnect = function(fd)
         return
     else
         players[playerId] = nil
-        local reason = "断线"
+        local reason = "鏂嚎"
         local amgr = harbor.queryname("agentmgr")
         skynet.call(amgr,"lua","reqkick",playerId,reason)
     end
@@ -154,7 +154,7 @@ s.resp.sure_agent=function(source,fd,playerId,agent)
     local cn = conns[fd]
     if not cn then
         local amgr = harbor.queryname("agentmgr")
-        skynet.call(amgr,"lua","reqkick",playerId,"未完成登录即下线")
+        skynet.call(amgr,"lua","reqkick",playerId,"鏈畬鎴愮櫥褰曞嵆涓嬬嚎")
         return false
     end
     cn.playerId = playerId

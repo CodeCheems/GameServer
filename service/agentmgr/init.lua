@@ -36,7 +36,7 @@ s.resp.reqlogin = function(source,playerId,node,gate)
         mplayer.status = STATUS.LOGOUT
         s.call(pnode,pagent,"kick")
         s.send(pnode,pagent,"exit")
-        s.send(pnode,pgate,"send",playerId,{"kick","¶¥ÌæÏÂÏß"})
+        s.send(pnode,pgate,"send",playerId,{"kick","é¡¶æ›¿ä¸‹çº¿"})
         s.call(pnode,pgate,"kick",playerId)
     end
     local player = mgrPlayer()

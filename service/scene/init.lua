@@ -68,7 +68,7 @@ s.resp.enter = function(source,playerId,node,agent)
     local enterMsg = {"enter",playerId,b.x,b.y,b.size}
     broadcast(enterMsg)
     balls[playerId] = b
-    local ret_msg = {"enter",0,"进入游戏成功"}
+    local ret_msg = {"enter",0,"杩涘叆娓告垙鎴愬姛"}
     s.send(b.node,b.agent,"send",ret_msg)
     s.send(b.node,b.agent,"send",ballListMsg())
     s.send(b.node,b.agent,"send",foodListMsg())
@@ -97,7 +97,7 @@ function move_update()
     for i, v in pairs(balls) do
         v.x = v.x + v.speedx * 0.2
         v.y = v.y + v.speedy * 0.2
-        if v.speedx ~= 0 or v.speedy~=0 then
+        if (v.speedx ~= 0 and v.speedx~="0") or (v.speedy~=0 and v.speedy~="0") then
             local msg = {"move",v.playerId,v.x,v.y}
             broadcast(msg)
         end

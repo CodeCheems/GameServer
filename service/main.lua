@@ -31,7 +31,7 @@ skynet.start(function()
     end
     for i, sid in pairs(runconfig.scene[mynode] or {}) do
         local srv = skynet.newservice("scene","scene",sid)
-        skynet.name(".scnen"..sid,srv)
+        skynet.name(".scene"..sid,srv)
     end
     --skynet.newservice("debug_console",8000)
     skynet.exit()

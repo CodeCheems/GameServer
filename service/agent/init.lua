@@ -30,11 +30,18 @@ s.init = function()
 end
 
 s.resp.kick = function(source)
+    s.leave_scene()
     skynet.error("be kick",s.name,s.id)
+    skynet.sleep(200)
 end
 
 s.resp.exit = function(source)
     skynet.exit()
 end
 
+s.resp.send = function(source,msg)
+    skynet.send(s.gate,"lua","send",s.id,msg)
+end
+
 s.start(...)
+require("scene")

@@ -31,7 +31,7 @@ s.client.login = function(fd,msg,source)
     if not isok then
         return {"login",3,"gate注册失败"}
     end
-    skynet.error{"login succ "..playerId}
+    skynet.error("login succ "..playerId)
     return {"login",0,"登录成功"}
 end
 
