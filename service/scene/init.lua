@@ -104,6 +104,36 @@ function move_update()
     end
 end
 
+function food_update()
+    if food_count > 50 then
+        return
+    end
+    if math.random(1,100)<98 then
+        return
+    end
+    food_maxid = food_maxid+1
+    food_count = food_count+1
+    local f = food()
+    f.id = food_maxid
+    foods[f.id] = f
+    local msg = {"addfood",f.id,f.x,f.y}
+    broadcast(msg)
+end
+
+function eat_update()
+    for pid, b in pairs(balls) do
+        for fid, f in pairs(foods) do
+            if(b.x-f.x)^2 + (b.y-f.y)^2 < b.size^2 then
+                b.size = b.size+1
+                food_count = food_count-1
+                local msg = {"eat",b.playerId,fid,b.size}
+                broadcast(msg)
+                foods[fid]=nil
+            end
+        end
+    end
+end
+
 function update(frame)
     food_update()
     move_update()
