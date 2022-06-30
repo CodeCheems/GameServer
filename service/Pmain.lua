@@ -15,8 +15,19 @@ function json_pack(cmd,msg)
     return buff
 end
 
-function json_unpack()
-
+function json_unpack(buff)
+    local len = string.len(buff)
+    local namelen_format = string.format("> i2 c%d",len-2)
+    local namelen,other = string.unpack(namelen_format,buff)
+    local bodylen = len-2-namelen
+    local format = string.format("> c%d c%d",namelen,bodylen)
+    local cmd,bodybuff = string.unpack(format,other)
+    local isok,msg = pcall(cjson.decode,bodybuff)
+    if not isok or not msg or not msg._cmd or not cmd == msg._cmd then
+        print("error")
+        return
+    end
+    return cmd,msg
 end
 
 function socket_unpack(msg,sz)
@@ -82,20 +93,20 @@ skynet.start(function()
     socketdriver.start(listenfd)]]
     local msg = {
         _cmd = "balllist",
+        coin = 100,
         balls = {
-            [1] = {id=102,x=10,y=20,size=1},
-            [2] = {id=103,x=10,y=20,size=2},
+            [1] = {id=102},
+            [2] = {id=103},
         }
     }
-    local buff = cjson.encode(msg)
-    print(buff)
+    local buff_with_len = json_pack("balllist",msg)
+    print("len : "..string.len(buff_with_len))
+    print(buff_with_len)
+    local format = string.format(">i2 c%d",string.len(buff_with_len)-2)
+    local _,buff = string.unpack(format,buff_with_len)
+    local cmd,umsg = json_unpack(buff)
+    print("cmd:"..cmd)
+    print("coin:"..umsg.coin)
+    print("balls[1]:"..umsg.balls[1].id)
 
-    buff = [[{"_cmd":"balllist","balls":[{"size":1,"x":10,"y":20,"id":102},{"size":2,"x":10,"y":20,"id":103}]}]]
-    local isok,ms = pcall(cjson.decode,buff)
-    if isok then
-        print(ms._cmd)
-        print(ms.balls[1].id)
-    else
-        print("error")
-    end
 end)
