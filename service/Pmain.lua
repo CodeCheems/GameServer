@@ -2,6 +2,9 @@ local skynet = require("skynet")
 local socketdriver = require("skynet.socketdriver")
 local netpack = require("skynet.netpack")
 local cjson = require("cjson")
+local pb = require("protobuf")
+local mysql = require("skynet.db.mysql")
+local db=nil
 local queue
 
 function json_pack(cmd,msg)
@@ -91,7 +94,7 @@ skynet.start(function()
     })
     local listenfd = socketdriver.listen("0.0.0.0",8888)
     socketdriver.start(listenfd)]]
-    local msg = {
+    --[[local msg = {
         _cmd = "balllist",
         coin = 100,
         balls = {
@@ -107,6 +110,60 @@ skynet.start(function()
     local cmd,umsg = json_unpack(buff)
     print("cmd:"..cmd)
     print("coin:"..umsg.coin)
-    print("balls[1]:"..umsg.balls[1].id)
+    print("balls[1]:"..umsg.balls[1].id)]]
+    --[[pb.register_file("./proto/login.pb")
+    local msg = {
+        id = 101,
+        pw = "123456",
+    }
+    local buff = pb.encode("login.Login",msg)
+    print("len : "..string.len(buff))
+    local umsg = pb.decode("login.Login",buff)
+    if umsg then
+        print("id : "..umsg.id)
+        print("pw : "..umsg.pw)
+    else
+        print("error")
+    end]]
 
+    db = mysql.connect({
+        host = "192.168.1.8",
+        port = 3306,
+        database = "game",
+        user = "root",
+        password = "root",
+        max_packet_size = 1024*1024,
+        on_connect = nil,
+    })
+    skynet.error("[Pmain] db connect")
+    --[[pb.register_file("./storage/playerdata.pb")
+    local playerdata = {
+        playerid = 108,
+        coin = 97,
+        name = "hjm",
+        level = 4,
+        last_login_time = os.time(),
+    }
+    local data = pb.encode("playerdata.BaseInfo",playerdata)
+    print("len : "..string.len(data))
+    local sql = string.format("insert into skynet (playerid,data) values (%d,%s)",108,mysql.quote_sql_str(data))
+    local res = db:query(sql)
+    if res.err then
+        print("error : "..res.err)
+    else
+        print("ok")
+    end]]
+    pb.register_file("./storage/playerdata.pb")
+    local sql = string.format("select * from skynet where playerid = 108")
+    local res = db:query(sql)
+    local data = res[1].data
+    print("len : "..string.len(data))
+    local udata = pb.decode("playerdata.BaseInfo",data)
+    if not data then
+        print("error")
+        return
+    end
+    print("coin: "..udata.coin)
+    print("name: "..udata.name)
+    print("last_login_time: "..udata.last_login_time)
 end)
