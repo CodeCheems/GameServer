@@ -33,6 +33,7 @@ skynet.start(function()
         local srv = skynet.newservice("scene","scene",sid)
         skynet.name(".scene"..sid,srv)
     end
+    skynet.newservice("admin","admin",0)
     --skynet.newservice("debug_console",8000)
     skynet.exit()
 end)

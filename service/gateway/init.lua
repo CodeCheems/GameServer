@@ -5,6 +5,7 @@ local runconfig = require("runconfig")
 local harbor = require("skynet.harbor")
 local conns = {}  --[fd] = conn
 local players = {}  --[playerId] = gatePlayer
+local closing = false
 
 local function conn()
     local m = {
@@ -111,6 +112,9 @@ local recv_loop = function(fd)
 end
 
 local connect = function(fd,addr)
+    if closing then
+        return
+    end
     print("connect from :"..addr.." "..fd)
     local c = conn()
     conns[fd] = c
@@ -179,6 +183,10 @@ s.resp.kick=function(source,playerId)
     conns[c.fd] = nil
     disconnect(c.fd)
     socket.close(c.fd)
+end
+
+s.resp.shutdown = function()
+    closing = true
 end
 
 s.start(...)
