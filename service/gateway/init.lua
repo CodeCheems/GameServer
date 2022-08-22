@@ -20,6 +20,9 @@ local function gatePlayer()
         playerId = nil,
         agent = nil,
         conn = nil,
+        key = math.random(1,99999999),
+        last_conn_time = nil,
+        msgcache = {}, --未发送的消息缓存
     }
     return m
 end
@@ -43,12 +46,46 @@ local str_pack = function(cmd,msg)
     return table.concat(msg,",").."\r\n"
 end
 
+local process_reconnect = function(fd,msg)
+    local playerId = tonumber(msg[2])
+    local key = tonumber(msg[3])
+    local cn = conns[fd]
+    if not cn then
+        skynet.error("reconnect fail,conn not exist")
+        return
+    end
+    local gplayer = players[playerId]
+    if not gplayer then
+        skynet.error("reconnect fail,player not exist")
+        return
+    end
+    if gplayer.conn then
+        skynet.error("reconnect fail,conn not break")
+        return
+    end
+    if gplayer.key ~=key then
+        skynet.error("reconnect fail,key error")
+        return
+    end
+    gplayer.conn = cn
+    cn.playerId = playerId
+    s.resp.send_by_fd(nil,fd,{"reconnect",0})
+    for i, cmsg in ipairs(gplayer.msgcache) do
+        s.resp.send_by_fd(nil,fd,cmsg)
+    end
+    gplayer.msgcache = {}
+end
+
 local process_msg = function(fd,msgstr)
     --skynet.error("fd: "..fd,"msg: "..msgstr)
     local cmd,msg = str_unpack(msgstr)
     skynet.error("recv "..fd.." ["..cmd.."] {"..table.concat(msg,",").."}")
     local cn = conns[fd]
     local playerId = cn.playerId
+    if cmd == "reconnect" then
+        process_reconnect(fd,msg)
+        return
+    end
     if not playerId then
         local node = skynet.getenv("node")
         local nodecfg = runconfig[node]
@@ -86,10 +123,16 @@ local disconnect = function(fd)
     if not playerId then
         return
     else
-        players[playerId] = nil
-        local reason = "断线"
-        local amgr = harbor.queryname("agentmgr")
-        skynet.call(amgr,"lua","reqkick",playerId,reason)
+        local gplayer = players[playerId]
+        gplayer.conn = nil
+        skynet.timeout(300*100,function()
+            if gplayer.conn~=nil then
+                return
+            end
+            local reason = "断线超时"
+            local amgr = harbor.queryname("agentmgr")
+            skynet.call(amgr,"lua","reqkick",playerId,reason)
+        end)
     end
 end
 
@@ -149,6 +192,12 @@ s.resp.send=function(source,playerId,msg)
     end
     local c = gplayer.conn
     if c==nil then
+        table.insert(gplayer.msgcache,msg)
+        local len = #gplayer.msgcache
+        if len>500 then
+            local amgr = harbor.queryname("agentmgr")
+            skynet.call(amgr,"lua","reqkick",playerId,"gate消息缓存过多")
+        end
         return
     end
     s.resp.send_by_fd(nil,c.fd,msg)
