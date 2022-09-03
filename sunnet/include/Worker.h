@@ -1,6 +1,6 @@
 #pragma once
 #include <thread>
-
+#include "Service.h"
 //class Sunnet;
 using namespace std;
 
@@ -9,4 +9,5 @@ public:
 	int id;
 	int eachNum;
 	void operator()();
+	void CheckAndPutGlobal(shared_ptr<Service> srv);
 };
